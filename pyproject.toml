@@ -1,0 +1,9 @@
+[project]
+name = "BotELOCOWT"
+version = "0.1.0"
+description = ""
+authors = ["gerald@papercrowns.com"]
+requires-python = ">=3.11"
+dependencies = [
+    "discord-py>=2.5.2",
+]
