@@ -2,6 +2,7 @@
 #           FATAL FURY ELO BOT - 
 # ===============================================================================================================================================
 
+
 import discord
 from discord import app_commands, ui
 from discord.ext import tasks
@@ -17,6 +18,8 @@ from typing import Optional, Any
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 GUILD_ID_STR = os.getenv('GUILD_ID')
 GUILD_ID = int(GUILD_ID_STR) if GUILD_ID_STR and GUILD_ID_STR.isdigit() else 0
+CHANNEL_ID_STR = os.getenv('CHANNEL_ID')
+CHANNEL_ID = int(CHANNEL_ID_STR) if CHANNEL_ID_STR and CHANNEL_ID_STR.isdigit() else 0
 
 INITIAL_ELO = 1000
 K_FACTOR = 30
@@ -402,6 +405,10 @@ class ChallengeView(discord.ui.View):
 @client.tree.command(name="challenge", description="Challenge another player to a ranked match.")
 @app_commands.describe(opponent="The player you want to challenge.")
 async def challenge_command(interaction: discord.Interaction, opponent: discord.Member):
+    if interaction.channel_id != CHANNEL_ID:
+        await interaction.response.send_message(f"This command can only be used in the designated ELO channel.", ephemeral=True)
+        return
+
     if opponent.bot or opponent.id == interaction.user.id:
         await interaction.response.send_message("You cannot challenge a bot or yourself.", ephemeral=True)
         return
@@ -426,6 +433,10 @@ async def challenge_command(interaction: discord.Interaction, opponent: discord.
 @client.tree.command(name="stats", description="Show your stats or another player's stats.")
 @app_commands.describe(player="The player whose stats you want to see (optional).")
 async def stats_command(interaction: discord.Interaction, player: Optional[discord.Member] = None):
+    if interaction.channel_id != CHANNEL_ID:
+        await interaction.response.send_message(f"This command can only be used in the designated ELO channel.", ephemeral=True)
+        return
+
     target_user = player or interaction.user
     player_data = get_player(interaction.client.db_conn, target_user.id)
     if not player_data:
@@ -444,6 +455,10 @@ async def stats_command(interaction: discord.Interaction, player: Optional[disco
 
 @client.tree.command(name="leaderboard", description="Displays the server's leaderboard.")
 async def leaderboard_command(interaction: discord.Interaction):
+    if interaction.channel_id != CHANNEL_ID:
+        await interaction.response.send_message(f"This command can only be used in the designated ELO channel.", ephemeral=True)
+        return
+
     leaderboard_data = get_leaderboard(interaction.client.db_conn, 10)
     if not leaderboard_data:
         await interaction.response.send_message("There is not enough data for a leaderboard yet.", ephemeral=True)
@@ -461,6 +476,10 @@ async def leaderboard_command(interaction: discord.Interaction):
 
 @client.tree.command(name="my_matches", description="Shows a list of your pending matches.")
 async def my_matches_command(interaction: discord.Interaction):
+    if interaction.channel_id != CHANNEL_ID:
+        await interaction.response.send_message(f"This command can only be used in the designated ELO channel.", ephemeral=True)
+        return
+
     pending_matches = get_pending_matches_for_user(interaction.client.db_conn, interaction.user.id)
     if not pending_matches:
         await interaction.response.send_message("You have no pending matches!", ephemeral=True)
@@ -493,6 +512,10 @@ async def my_matches_command(interaction: discord.Interaction):
 @app_commands.describe(match_id="The ID of the match to resolve.", winner="The player who won the match.")
 @app_commands.checks.has_role(ADMIN_ROLE_NAME)
 async def admin_resolve_command(interaction: discord.Interaction, match_id: str, winner: discord.Member):
+    if interaction.channel_id != CHANNEL_ID:
+        await interaction.response.send_message(f"This command can only be used in the designated ELO channel.", ephemeral=True)
+        return
+
     match_data = get_match(interaction.client.db_conn, match_id)
     if not match_data:
         await interaction.response.send_message(f"Match `{match_id}` was not found.", ephemeral=True)
@@ -549,6 +572,11 @@ async def check_stale_matches(client: MyClient):
 
     print(f"Found {len(stale_matches)} stale match(es) to clean up.")
     for match in stale_matches:
+        # Check if the match is in the designated channel before processing it
+        if int(match['channel_id']) != CHANNEL_ID:
+            print(f"Skipping stale match {match['match_id']} as it is not in the designated channel.")
+            continue
+
         channel = guild.get_channel(int(match['channel_id']))
         if not channel:
             print(f"Could not find channel for stale match {match['match_id']}. Skipping.")
@@ -577,8 +605,7 @@ async def before_check_stale_matches():
 # --- MAIN ENTRY POINT ---
 
 if __name__ == "__main__":
-    if not BOT_TOKEN or GUILD_ID == 0:
-        print("CRITICAL ERROR: BOT_TOKEN or GUILD_ID are not configured in Secrets.")
+    if not BOT_TOKEN or GUILD_ID == 0 or CHANNEL_ID == 0:
+        print("CRITICAL ERROR: BOT_TOKEN, GUILD_ID, or CHANNEL_ID are not configured in Replit Secrets.")
     else:
         client.run(BOT_TOKEN)
-
