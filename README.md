@@ -14,31 +14,11 @@ This is a private Discord bot developed for internal company use. It implements 
 - **Automated Match Resolution**: Intelligently handles match timeouts and resolves matches where only one player reports a result.
 - **Admin Tools**: Users with the "Administrador ELO" role can manually resolve disputed or problematic matches using the `/admin_resolve_match` command.
 
-## Setup and Installation
-Follow these steps to get the bot running in a development environment.
-
-### Clone the repository:
-```bash
-git clone https://github.com/GeraldRVE/botelo.git
-cd botelo
-```
-
-### Install dependencies:
-Make sure you have Python 3.11+ installed. Then, install the required libraries:
-```bash
-pip install -r requirements.txt
-```
-
 ### Configure Environment Variables:
 This project uses environment variables for sensitive data. Create a `.env` file or use your hosting platform's environment variable system to set the following:
 
 - `BOT_TOKEN`: Your Discord bot's unique token.
 - `GUILD_ID`: The ID of the Discord server (guild) where the bot will operate.
-
-### Run the bot:
-```bash
-python main.py
-```
 
 The bot will automatically initialize the `elo_bot.db` SQLite database file on its first run.
 
